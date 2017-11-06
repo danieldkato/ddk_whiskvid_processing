@@ -1,7 +1,81 @@
+"""
+ddk_whiskvid_processing.py
+
+DOCUMENTATION TABLE OF CONTENTS:
+I. OVERVIEW
+II. USAGE
+III. REQUIREMENTS
+IV. INPUTS
+V. OUTPUTS
+
+last updated DDK 2017-11-03
+
+################################################################################
+I. OVERVIEW:
+
+This script acts as a wrapper for Chris' WhiskiWrap, which is itself a wrapper
+for Nathan Clack's whisk. I use this to organize the inputs and outputs in a
+way that I like and fits in with my workflow; all input paths and analysis 
+parameters are saved in a parameters JSON file, and analysis metadata is saved
+in a format consistent with the rest of my analyses.
+
+
+################################################################################
+II. USAGE:
+
+To use this funciton, enter the following into the command line:
+
+python ddk_whiskvid_processing.py /path/to/params/file
+
+
+################################################################################
+III. REQUIREMENTS:
+
+1) WhiskiWrap, available at https://github.com/cxrodgers/WhiskiWrap/.git. Note that
+   this package itself requires a number of dependencies, including: 
+        a) whisk, 
+        b) tifffile, and
+        c) my, another module available on cxrodgers' github.
+
+2) The module utilities, available at https://github.com/danieldkato/utilities.git
+
+3) ffmpeg
+
+
+################################################################################
+IV. INPUTS:
+
+This function takes a single command line input, namely, a path to a parameters
+JSON file (see USAGE above). Example contents of such a file could include:
+
+{
+    "inputs":[
+                {"path": </path/to/raw/video>}
+            ],
+    "params":["n_trace_processes": <number of parallel processes to start>]
+}
+
+Note that this function assumes that the raw video is of white whiskers on a black
+background. This means that before being passed to whisk, the video must be color
+inverted to black whiskers on a white background. This is done by making a system
+call to ffmpeg. 
+
+
+################################################################################
+V. OUTPUTS:
+
+This function saves to secondary storage an hdf5 file containing the output of 
+whisk. It also creates a large number of temporary files used to parallelize
+and segment the operation of whisk.
+
+
+################################################################################
+"""
 import WhiskiWrap
 import sys
 import json 
 import os
+import subprocess
 from utilities.Metadata import Metadata, write_metadata
 
 # Get path to paramters file from command line:
@@ -15,11 +89,16 @@ with open(params_file_path) as data_file:
 input_path = json_data["inputs"][0]["path"]
 num_cores = json_data["params"]["n_trace_processes"]
 
+# Invert the video using ffmpeg (acquired as white on black; trace requires black on white)
+raw_vid_name = os.path.basename(input_path)[0:-3]
+inverted_vid_path = os.path.dirname(input_path) + os.path.sep + raw_vid_name + '.mp4'
+subprocess.Popen(['ffmpeg', '-i', input_path, '-vf', 'lutyuv=y=negval', '-vcodec', 'mpeg4', '-q', '2', inverted_vid_name])
+
 # Auto-generate name of output file:
 output_path = os.path.dirname(input_path) + os.path.sep + 'whiski_output.hdf5'
 
 # Run WhiskiWrap:
-WhiskiWrap.pipeline_trace(input_path,output_path,n_trace_processes = num_cores)
+WhiskiWrap.pipeline_trace(inverted_vid_path,output_path,n_trace_processes = num_cores)
 
 # Create Metadata object:
 M = Metadata()
