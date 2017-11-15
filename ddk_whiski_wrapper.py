@@ -13,7 +13,7 @@ last updated DDK 2017-11-03
 ################################################################################
 I. OVERVIEW:
 
-This script acts as a wrapper for Chris' WhiskiWrap, which is itself a wrapper
+This script acts as a wrapper for Chris Rodgers' WhiskiWrap, which is itself a wrapper
 for Nathan Clack's whisk. I use this to organize the inputs and outputs in a
 way that I like and fits in with my workflow; all input paths and analysis 
 parameters are saved in a parameters JSON file, and analysis metadata is saved
@@ -32,14 +32,14 @@ python ddk_whiskvid_processing.py /path/to/params/file
 III. REQUIREMENTS:
 
 1) WhiskiWrap, available at https://github.com/cxrodgers/WhiskiWrap/.git. Note that
-   this package itself requires a number of dependencies, including: 
+   this package itself has a number of dependencies, including: 
         a) whisk, 
         b) tifffile, and
         c) my, another module available on cxrodgers' github.
 
-2) The module utilities, available at https://github.com/danieldkato/utilities.git
+2) The module `utilities`, available at https://github.com/danieldkato/utilities.git
 
-3) ffmpeg
+3) The command-line utility ffmpeg, available at www.ffmpeg.org.
 
 
 ################################################################################
