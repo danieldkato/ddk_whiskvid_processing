@@ -92,7 +92,7 @@ num_cores = json_data["params"]["n_trace_processes"]
 # Invert the video using ffmpeg (acquired as white on black; trace requires black on white)
 raw_vid_name = os.path.basename(input_path)[0:-3]
 inverted_vid_path = os.path.dirname(input_path) + os.path.sep + raw_vid_name + '.mp4'
-subprocess.Popen(['ffmpeg', '-i', input_path, '-vf', 'lutyuv=y=negval', '-vcodec', 'mpeg4', '-q', '2', inverted_vid_name])
+subprocess.Popen(['ffmpeg', '-i', input_path, '-vf', 'lutyuv=y=negval', '-vcodec', 'mpeg4', '-q', '2', inverted_vid_path])
 
 # Auto-generate name of output file:
 output_path = os.path.dirname(input_path) + os.path.sep + 'whiski_output.hdf5'

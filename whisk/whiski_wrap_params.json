@@ -1,0 +1,9 @@
+{
+	"inputs":[
+			{"path":"/mnt/nas2/homes/dan/MultiSens/data/5036-2/2P/2017-09-26/site1/grab01/whiskvid/whiski_wrap_session1/2017-09-26_ddk-1.avi"
+			}
+		],
+	"params":{
+			"n_trace_processes":4
+		}
+}
