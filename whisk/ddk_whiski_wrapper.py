@@ -39,8 +39,6 @@ III. REQUIREMENTS:
 
 2) The module `utilities`, available at https://github.com/danieldkato/utilities.git
 
-3) The command-line utility ffmpeg, available at www.ffmpeg.org.
-
 
 ################################################################################
 IV. INPUTS:
@@ -50,15 +48,14 @@ JSON file (see USAGE above). Example contents of such a file could include:
 
 {
     "inputs":[
-                {"path": </path/to/raw/video>}
+                {"path": </path/to/input/video>}
             ],
     "params":["n_trace_processes": <number of parallel processes to start>]
 }
 
-Note that this function assumes that the raw video is of white whiskers on a black
-background. This means that before being passed to whisk, the video must be color
-inverted to black whiskers on a white background. This is done by making a system
-call to ffmpeg. 
+Note this assumes that the input video depicts black whiskers on a white 
+background. If this is not the case, first run ffmpeg on the input video
+to invert the colors.
 
 
 ################################################################################
@@ -89,18 +86,22 @@ with open(params_file_path) as data_file:
 input_path = json_data["inputs"][0]["path"]
 num_cores = json_data["params"]["n_trace_processes"]
 
+"""
 # Invert the video using ffmpeg (acquired as white on black; trace requires black on white)
 raw_vid_name = os.path.basename(input_path)[0:-3]
 inverted_vid_path = os.path.dirname(input_path) + os.path.sep + raw_vid_name + '.mp4'
 subprocess.Popen(['ffmpeg', '-i', input_path, '-vf', 'lutyuv=y=negval', '-vcodec', 'mpeg4', '-q', '2', inverted_vid_path])
+"""
 
 # Auto-generate name of output file:
 output_path = os.path.dirname(input_path) + os.path.sep + 'whiski_output.hdf5'
 
 # Run WhiskiWrap:
-WhiskiWrap.pipeline_trace(inverted_vid_path,output_path,n_trace_processes = num_cores)
+print("Running WhiskiWrap...")
+WhiskiWrap.pipeline_trace(input_path,output_path,n_trace_processes = num_cores)
 
 # Create Metadata object:
+print("Getting metadata...")
 M = Metadata()
 M.add_input(input_path)
 M.add_output(output_path)
