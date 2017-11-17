@@ -14,12 +14,16 @@ close all
 % f4 = [filename '.measurements'];
 % 
 % mcom = ['!measure --face left ',f3,' ',f4];
-% eval(mcom)
+% eval(mcom)1
 
-if ~isequal(filename(end-3:end),'.mat')
+if length(filename) > 3 % Add guard against condition where the length of filename is less than or equal to 3 characters, in which case filename(end-3:end) will create an indexing error. This occasionally happens when I'm testing things and use a filename like 'out' (DDK 2017-11-17)
+    if ~isequal(filename(end-3:end),'.mat') 
+        filename = [filename '.mat'];
+    else
+        filename = [filename(1:end-4) '.mat'];
+    end
+elseif length(filename) <=3
     filename = [filename '.mat'];
-else
-    filename = [filename(1:end-4) '.mat'];
 end
 disp(filename)
 %Create a mat file if doesn't already exist and run the 'setup' analysis
@@ -56,7 +60,8 @@ percDone = 0;
 disp('Analyzing whisker objects...')
 disp(sprintf('%s',num2str(percDone),'% done...'))
 
-%%%%%%%%% Analyze whisker tracing information by frame %%%%%%%
+
+%% %%%%%%%%% Analyze whisker tracing information by frame %%%%%%%
 whiskerPosition = zeros(1,nFrames);
 whiskerPosition_median = zeros(1,nFrames);
 whiskerCurvature = zeros(1,nFrames);
