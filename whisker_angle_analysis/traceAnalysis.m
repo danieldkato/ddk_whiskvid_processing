@@ -55,13 +55,15 @@ load(filename)
 
 %% Load whisker measurements data:
 
-% We need to determine whether the input is a .measurements file or a .HDF5
-% file, and load the appropriate one: (DDK 2017-11-19)
+% We need to determine whether we're getting the whisker measurements from
+% a .measurements file or a .HDF5 file, and load the appropriate one: (DDK
+% 2017-11-19)
 
 basename = filename(1:end-4);
 measurefile = [basename '.measurements'];
 hdf5file = [basename '.hdf5'];
-
+measurements_exist = false;
+hdf5_exists = false;
 
 % Check if a .measurements file exists: (DDK 2017-11-19)
 if exist(measurefile, 'file')
@@ -113,7 +115,7 @@ switch whisker_dat_src
         % In accordance with the naming conventions used by cxrodgers in
         % WhiskiWrap, I'm assuming the data we want is in the dataset named
         % '/summary' (DDK 2017-11-17)
-        summary = h5read(hd5file,'/summary'); 
+        summary = h5read(hdf5file,'/summary'); 
         summary_fields = fieldnames(summary);
         
         % The code below requires that all fields be a vector of the same
@@ -121,15 +123,26 @@ switch whisker_dat_src
         % all fields in fact have the same length? (DDK 2017-11-17)
         n_segs = length(summary.(summary_fields{1})); 
         
-        % Don't love having to do this in a for loop, but after searching
+        % Don't like having to do this in a for loop, but after searching
         % the help forums online there doesn't seem to be a more efficient
         % way of doing this: (DDK 2017-11-17)
+        tic;
         for s = 1:n_segs
             for f = 1:length(summary_fields)
-                current_field = summary_fields(f);
+                current_field = summary_fields{f};
                 measurements(s).(current_field) = summary.(current_field)(s);
             end
         end
+        toc;
+        
+        % Rename some fields to make consistent with rest of code: TODO?
+        % Try to harmonize field names across code so we don't have to do
+        % things like this? (DDK 2017-11-17)
+        measurements_cell = struct2cell(measurements);
+        summary_fields{strmatch('time',summary_fields,'exact')} = 'fid';
+        summary_fields{strmatch('fol_x',summary_fields,'exact')} = 'follicle_x';
+        summary_fields{strmatch('fol_y',summary_fields,'exact')} = 'follicle_y';
+        measurements = cell2struct(measurements_cell,summary_fields);        
 end
 
 
