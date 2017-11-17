@@ -16,6 +16,8 @@ close all
 % mcom = ['!measure --face left ',f3,' ',f4];
 % eval(mcom)1
 
+%% Load or create .mat file where analysis output will be saved:
+
 if length(filename) > 3 % Add guard against condition where the length of filename is less than or equal to 3 characters, in which case filename(end-3:end) will create an indexing error. This occasionally happens when I'm testing things and use a filename like 'out' (DDK 2017-11-17)
     if ~isequal(filename(end-3:end),'.mat') 
         filename = [filename '.mat'];
@@ -34,25 +36,102 @@ end
 load(filename)
 
 %if isequal(plotFig,'y')
-    if ~exist('vidobj','var')
-        %Loading video file
-        %vidfile = sprintf('%s',filename(1:end-4),'.mp4');
-        vidfile = [filename(1:end-4) '.mp4'];
-        disp('Loading video file...')
-        vidobj = VideoReader(vidfile); %Load the video file
-    end
-    h = figure(1);
-    set(0,'CurrentFigure',h)
-    whiskMov = struct('cdata',zeros(vidobj.Height,vidobj.Width,3,'uint8'),...
-        'colormap',[]);
+if ~exist('vidobj','var')
+    %Loading video file
+    %vidfile = sprintf('%s',filename(1:end-4),'.mp4');
+    vidfile = [filename(1:end-4) '.mp4'];
+    disp('Loading video file...')
+    vidobj = VideoReader(vidfile); %Load the video file
+end
+h = figure(1);
+set(0,'CurrentFigure',h)
+whiskMov = struct('cdata',zeros(vidobj.Height,vidobj.Width,3,'uint8'),...
+    'colormap',[]);
 %end
 
-%Load other needed files
-measurefile = sprintf('%s',filename(1:end-4),'.measurements');
-disp('Loading measurements file...')
-measurements = LoadMeasurements(measurefile);
 disp('Loading mat file...')
 load(filename)
+
+
+%% Load whisker measurements data:
+
+% We need to determine whether the input is a .measurements file or a .HDF5
+% file, and load the appropriate one: (DDK 2017-11-19)
+
+basename = filename(1:end-4);
+measurefile = [basename '.measurements'];
+hdf5file = [basename '.hdf5'];
+
+
+% Check if a .measurements file exists: (DDK 2017-11-19)
+if exist(measurefile, 'file')
+    measurements_exist = true;
+end
+
+
+% Check if a .hdf5 file exists: (DDK 2017-11-19)
+if exist(hdf5file, 'file')
+    hdf5_exists = true;
+end
+
+
+% If only one or the other of .measurements and .hdf5 exists, choose the
+% one that exists (obvi): (DDK 2017-11-19)
+if ~(measurements_exist && hdf5_exists)
+    if measurements_exist
+        whisker_dat_src = measurefile;
+    elseif hdf5_exists
+        whisker_dat_src = hdf5file;
+    end
+
+    
+% If BOTH .measurements AND hdf5 files exist, prompt the user for
+% which one to use: (DDK 2017-11-17)    
+elseif measurements_exist && hdf5_exists 
+    whisker_dat_src = get_choice(); % get_choice() defined below; this is to ensure that the user enters a valid choice
+end
+
+
+% Once the source for the whisker data has been selected, load it: (DDK
+% 2017-11-17)
+disp('Loading measurements file...')
+switch whisker_dat_src
+    case measurefile
+        
+        measurements = LoadMeasurements(measurefile);        
+    
+    case hdf5file
+        
+        % If we're loading from the HDF5, then we have to do some
+        % re-formatting to make the data compatible with the rest of the
+        % code: the data gets loaded from the HDF5 as 1 x 1 struct where
+        % each field is an s x 1 vector, where s is the number of segments.
+        % What we want instead is an s x 1 struct array, where each field
+        % for each struct is a scalar. (DDK 2017-11-17)
+        measurements = struct; % Intialize empty struc (DDK 2017-11-17)
+        
+        % In accordance with the naming conventions used by cxrodgers in
+        % WhiskiWrap, I'm assuming the data we want is in the dataset named
+        % '/summary' (DDK 2017-11-17)
+        summary = h5read(hd5file,'/summary'); 
+        summary_fields = fieldnames(summary);
+        
+        % The code below requires that all fields be a vector of the same
+        % length; this should be the case. TODO? Add guard to validate that
+        % all fields in fact have the same length? (DDK 2017-11-17)
+        n_segs = length(summary.(summary_fields{1})); 
+        
+        % Don't love having to do this in a for loop, but after searching
+        % the help forums online there doesn't seem to be a more efficient
+        % way of doing this: (DDK 2017-11-17)
+        for s = 1:n_segs
+            for f = 1:length(summary_fields)
+                current_field = summary_fields(f);
+                measurements(s).(current_field) = summary.(current_field)(s);
+            end
+        end
+end
+
 
 z = 1;
 b=1;
@@ -197,3 +276,18 @@ whiskerangle_bin([filename])
 end
 
 
+%% Define some very minor auxiliary functions (that might not be worth their own .m file):
+
+% This function ensures that the user enters a valid choice when choosing
+% which file to get the whisker data from: (DDK 2017-11-19)
+function whisker_dat_src = get_choice()
+    choice = input('HDF5 and .measurements file detected. Please enter ''1'' to use HDF5 and ''2'' to use .measurements file.');
+    
+    if choice == 1 
+        whisker_dat_src = [basename '.hdf5'];
+    elseif choice == 2
+        whisker_dat_src = [basename '.measurements'];
+    else
+        choice = get_choice();
+    end
+end
