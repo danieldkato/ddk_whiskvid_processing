@@ -25,7 +25,7 @@ II. USAGE:
 
 To use this funciton, enter the following into the command line:
 
-python ddk_whiskvid_processing.py /path/to/params/file
+python ddk_whiski_wrapper.py /path/to/params/file
 
 
 ################################################################################
