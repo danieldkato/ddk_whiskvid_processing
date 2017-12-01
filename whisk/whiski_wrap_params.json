@@ -1,9 +1,31 @@
 {
 	"inputs":[
-			{"path":"/mnt/nas2/homes/dan/MultiSens/data/5036-2/2P/2017-09-26/site1/grab01/whiskvid/whiski_wrap_session1/2017-09-26_ddk-1.avi"
+			{"path":"/mnt/nas2/homes/dan/MultiSens/data/5036-2/2P/2017-09-26/site1/grab01/whiskvid/whiski_wrap_session4/out_short.mp4"
 			}
 		],
 	"params":{
-			"n_trace_processes":4
+			"pix_fmt":"gray",
+			"bufsize":10E8,
+			"duration":"None",
+			"start_frame_time":"None",
+			"start_frame_number":"None",
+			"write_stderr_to_screen":"False",
+			"tiffs_to_trace_directory":"",
+			"sensitive":"False",
+			"chunk_size":200,
+			"chunk_name_pattern":"chunk%08d.tif",
+			"stop_after_frame":"None",
+			"delete_tiffs":"True",
+			"timestamps_filename":"None",
+			"monitor_video":"None",
+			"monitor_video_kwargs":"None",
+			"write_monitor_ffmpeg_stderr_to_screen":"False",
+			"h5_filename":"None",
+			"frame_func":"None",
+			"n_trace_processes":4,
+			"expectedrows":1000000,
+			"verbose":"True",
+			"skip_stitch":"False",
+			"face":"right"
 		}
 }

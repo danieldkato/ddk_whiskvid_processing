@@ -82,9 +82,18 @@ params_file_path = sys.argv[1]
 with open(params_file_path) as data_file:
     json_data = json.load(data_file)
 
+# Do some JSOn-to-Python conversion:
+params = json_data["params"]
+for p in params:
+    if params[p] == 'None':
+        params[p] = None
+    elif params[p] == 'True':
+        params[p] = True
+    elif params[p] == 'False':
+        params[p] = False
+
 # Get inputs and parameters
 input_path = json_data["inputs"][0]["path"]
-num_cores = json_data["params"]["n_trace_processes"]
 
 """
 # Invert the video using ffmpeg (acquired as white on black; trace requires black on white)
@@ -96,9 +105,35 @@ subprocess.Popen(['ffmpeg', '-i', input_path, '-vf', 'lutyuv=y=negval', '-vcodec
 # Auto-generate name of output file:
 output_path = os.path.dirname(input_path) + os.path.sep + 'whiski_output.hdf5'
 
+# Create input_reader object:
+input_reader = WhiskiWrap.FFmpegReader(input_filename=input_path,
+        pix_fmt=params["pix_fmt"],
+        bufsize=int(params["bufsize"]),
+        duration=params["duration"],
+        start_frame_time=params["start_frame_time"],
+        start_frame_number=params["start_frame_number"],
+        write_stderr_to_screen=params["write_stderr_to_screen"])
+
 # Run WhiskiWrap:
 print("Running WhiskiWrap...")
-WhiskiWrap.pipeline_trace(input_path,output_path,n_trace_processes = num_cores)
+WhiskiWrap.interleaved_read_trace_and_measure(input_reader=input_reader,
+        tiffs_to_trace_directory=os.path.dirname(input_path),
+        sensitive=params["sensitive"],
+        chunk_size=params["chunk_size"],
+        chunk_name_pattern=params["chunk_name_pattern"],
+        stop_after_frame=params["stop_after_frame"],
+        delete_tiffs=params["delete_tiffs"],
+        timestamps_filename=params["timestamps_filename"],
+        monitor_video=params["monitor_video"],
+        monitor_video_kwargs=params["monitor_video_kwargs"],
+        write_monitor_ffmpeg_stderr_to_screen=params["write_monitor_ffmpeg_stderr_to_screen"],
+        h5_filename=output_path,
+        frame_func=params["frame_func"],
+        n_trace_processes=params["n_trace_processes"],
+        expectedrows=params["expectedrows"],
+        verbose=params["verbose"],
+        skip_stitch=params["skip_stitch"],
+        face=params["face"])
 
 # Create Metadata object:
 print("Getting metadata...")
